@@ -2,7 +2,7 @@ from apiflask import (APIFlask, Schema, fields, validators,
                       PaginationSchema, pagination_builder, abort, HTTPError)
 from services import db
 from models import Person, Account, Transaction
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade, downgrade
 from datetime import datetime
 
 
@@ -108,6 +108,19 @@ def create_app():
     with app.app_context():
         db.init_app(app)
         db.create_all()
+
+    @app.cli.command("seed-db")
+    def seed_db():
+        for num in range(1, 6):
+            new_person = Person()
+            new_person.name = f'User {num}'
+            new_person.cpf = f'1234567891{num}'
+            new_person.birthdate = datetime.fromisoformat(
+                f'2000-02-0{num}T05:55:00'
+            )
+            db.session.add(new_person)
+            db.session.flush()
+        db.session.commit()
 
     @app.post('/account')
     @app.input(AccountIn)
