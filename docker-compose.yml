@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:8.0.31
+    restart: always
+    env_file:
+      variables.env
+    ports:
+      - '3306:3306'
+    volumes:
+      - bloxs-db:/var/lib/mysql
+
+volumes:
+  bloxs-db:
