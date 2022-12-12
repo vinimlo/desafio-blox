@@ -3,7 +3,7 @@
     <h3>Depósito</h3>
     <form @submit.prevent="deposit">
       <label for="amount">Valor</label>
-      <input type="number" name="amount" id="amount" v-model="amount" :disabled="isAccountLocked">
+      <input type="number" name="amount" id="amount" v-model="amount" :disabled="isAccountLocked" placeholder="0.00" required min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$">
 
       <input type="submit" value="Depositar" :disabled="isAccountLocked">
     </form>

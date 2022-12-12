@@ -10,7 +10,7 @@
     </h3>
 
     <strong>
-      {{ balance }}
+      R$ {{ String(Number(balance).toFixed(2)).replace('.', ',') }}
     </strong>
   </div>
 </template>

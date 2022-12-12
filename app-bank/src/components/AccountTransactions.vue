@@ -25,7 +25,7 @@
           </small>
         </td>
         <td>
-          {{ transaction.amount }}
+          R$ {{ String(Number(transaction.amount).toFixed(2)).replace('.', ',') }}
         </td>
         <td>
           {{ formatDate(String(transaction.date_created)) }}

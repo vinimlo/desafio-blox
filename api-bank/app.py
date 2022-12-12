@@ -5,7 +5,6 @@ from models import Person, Account, Transaction
 from flask_migrate import Migrate, upgrade, downgrade
 from datetime import datetime
 from services import db
-from decimal import Decimal
 
 
 class CPFAlreadyExists(HTTPError):
@@ -163,8 +162,8 @@ def create_app():
     def create_account(data):
 
         new_account = Account()
-        new_account.balance = 0.0
-        new_account.daily_withdrawal_limit = 1000.0
+        new_account.balance = 0.00
+        new_account.daily_withdrawal_limit = 1000.00
         new_account.is_active = True
         new_account.account_type = data.get('account_type')
         new_account.date_created = datetime.now()
@@ -217,6 +216,7 @@ def create_app():
             abort(403, 'Account locked.')
 
         amount_to_deposit = abs(data.get('amount'))
+
         new_transaction = Transaction()
         new_transaction.amount = amount_to_deposit
         new_transaction.account_id = data.get('account_id')
@@ -226,7 +226,7 @@ def create_app():
 
         user_account = Account.query.filter_by(
             id=data.get('account_id')).first()
-        user_account.balance += Decimal(amount_to_deposit)
+        user_account.balance += amount_to_deposit
 
         db.session.commit()
 
@@ -236,7 +236,7 @@ def create_app():
     @app.input(TransactionIn)
     @app.output(AccountOut(partial=True), status_code=201)
     def create_withdrawal(data):
-        amount_to_withdrawal = abs(data.get('amount'))
+        amount_to_withdrawal = round(abs(data.get('amount')), 2)
         user_account = Account.query.filter_by(
             id=data.get('account_id')).first()
 
@@ -249,6 +249,9 @@ def create_app():
         if not account_has_limit:
             abort(403, 'Daily limit exceeded!')
 
+        if user_account.balance - amount_to_withdrawal < 0:
+            abort(403, 'Not enough funds1!')
+
         new_transaction = Transaction()
         new_transaction.amount = -amount_to_withdrawal
         new_transaction.account_id = data.get('account_id')
@@ -256,7 +259,7 @@ def create_app():
         db.session.add(new_transaction)
         db.session.commit()
 
-        user_account.balance -= Decimal(amount_to_withdrawal)
+        user_account.balance -= amount_to_withdrawal
         db.session.commit()
 
         return {'balance': user_account.balance}

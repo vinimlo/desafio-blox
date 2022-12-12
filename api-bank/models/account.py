@@ -4,8 +4,8 @@ from services import db
 class Account(db.Model):
     __tablename__ = "account"
     id = db.Column(db.Integer, primary_key=True)
-    balance = db.Column(db.Numeric, nullable=False)
-    daily_withdrawal_limit = db.Column(db.Numeric, nullable=False)
+    balance = db.Column(db.Float, nullable=False)
+    daily_withdrawal_limit = db.Column(db.Float, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     account_type = db.Column(db.Integer, nullable=False)
     date_created = db.Column(db.DateTime, nullable=False)
