@@ -83,8 +83,8 @@ export default defineComponent({
     formatDate(date: string): string {
       let newDate = new Date(date);
 
-      let hour = ('00' + newDate.getUTCHours()).slice(-2);
-      let minutes = ('00' + newDate.getUTCMinutes()).slice(-2);
+      let hour = ('00' + newDate.getHours()).slice(-2);
+      let minutes = ('00' + newDate.getMinutes()).slice(-2);
       let formattedDate = `${newDate.toLocaleDateString()} ${hour}:${minutes}`;
       return formattedDate;
     }

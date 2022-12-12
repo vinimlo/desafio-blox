@@ -4,12 +4,17 @@ services:
   db:
     image: mysql:8.0.31
     restart: always
-    env_file:
-      variables.env
+    env_file: variables.env
     ports:
       - '3306:3306'
     volumes:
       - bloxs-db:/var/lib/mysql
-
+  vue-ui:
+    build:
+      context: ./app-bank
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    container_name: vue-ui
 volumes:
   bloxs-db:
