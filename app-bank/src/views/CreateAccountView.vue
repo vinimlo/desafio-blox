@@ -54,7 +54,8 @@ export default defineComponent({
     this.registryToSend = this.userRegistry.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
     axios.get(`http://localhost:5000/person/${this.registryToSend}`)
       .then((response: any) => {
-        this.birthdate = response.data.birthdate.substring(0, 10);
+        let date = new Date(response.data.birthdate);
+        this.birthdate = `${date.toLocaleDateString()}`;
         this.name = response.data.name;
         this.userId = response.data.id;
       });
