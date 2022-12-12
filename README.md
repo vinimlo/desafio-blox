@@ -7,7 +7,7 @@ Para rodar o projeto, basta seguir os comandos descritos abaixo na ordem em que 
 
 ### Baixando o projeto e fazendo setup da API
 ```bash
-git clone https://github.com/vinimlo/desafio-blox.git
+git clone https://github.com/vinimlo/desafio-bloxs.git
 cd desafio-bloxs/api-bank
 cp .env.example .env
 make init
