@@ -5,6 +5,7 @@ from models import Person, Account, Transaction
 from flask_migrate import Migrate, upgrade, downgrade
 from datetime import datetime
 from services import db
+from decimal import Decimal
 
 
 class CPFAlreadyExists(HTTPError):
@@ -25,12 +26,12 @@ class AccountNotFound(HTTPError):
 class TransactionQuery(Schema):
     page = fields.Integer(load_default=1)
     per_page = fields.Integer(
-        load_default=20, validate=validators.Range(max=30))
+        load_default=10, validate=validators.Range(max=30))
     account_id = fields.Integer()
 
 
 class TransactionIn(Schema):
-    amount = fields.Decimal()
+    amount = fields.Float()
     account_id = fields.Integer()
 
 
@@ -42,10 +43,12 @@ class AccountIn(Schema):
 class LockIn(Schema):
     is_active = fields.Boolean()
 
+
 class PersonIn(Schema):
     name = fields.String()
     cpf = fields.String()
     birthdate = fields.DateTime()
+
 
 class PersonOut(Schema):
     id = fields.Integer()
@@ -56,8 +59,8 @@ class PersonOut(Schema):
 
 class AccountOut(Schema):
     id = fields.Integer()
-    balance = fields.Decimal()
-    daily_withdrawal_limit = fields.Decimal()
+    balance = fields.Float()
+    daily_withdrawal_limit = fields.Float()
     is_active = fields.Boolean()
     account_type = fields.Integer()
     date_created = fields.DateTime()
@@ -67,7 +70,7 @@ class AccountOut(Schema):
 
 class TransactionOut(Schema):
     id = fields.Integer()
-    amount = fields.Decimal()
+    amount = fields.Float()
     date_created = fields.DateTime()
     account_id = fields.Integer()
 
@@ -172,9 +175,9 @@ def create_app():
 
         return new_account
 
-    @app.get('/get_account/<int:person_cpf>')
+    @app.get('/search_account/<int:person_cpf>')
     @app.output(AccountOut, status_code=200)
-    def get_account(person_cpf: int):
+    def search_account(person_cpf: int):
         person = Person.query.filter_by(cpf=person_cpf).first()
         if not person:
             raise PersonNotFound
@@ -205,8 +208,11 @@ def create_app():
 
     @app.post('/deposit')
     @app.input(TransactionIn)
-    @app.output(TransactionOut, status_code=201)
+    @app.output(AccountOut(partial=True), status_code=201)
     def create_deposit(data):
+        user_account = Account.query.filter_by(
+            id=data.get('account_id')).first()
+
         if not user_account.is_active:
             abort(403, 'Account locked.')
 
@@ -220,15 +226,15 @@ def create_app():
 
         user_account = Account.query.filter_by(
             id=data.get('account_id')).first()
-        user_account.balance += amount_to_deposit
+        user_account.balance += Decimal(amount_to_deposit)
 
         db.session.commit()
 
-        return new_transaction
+        return {'balance': user_account.balance}
 
     @app.post('/withdrawal')
     @app.input(TransactionIn)
-    @app.output(TransactionOut, status_code=201)
+    @app.output(AccountOut(partial=True), status_code=201)
     def create_withdrawal(data):
         amount_to_withdrawal = abs(data.get('amount'))
         user_account = Account.query.filter_by(
@@ -250,10 +256,10 @@ def create_app():
         db.session.add(new_transaction)
         db.session.commit()
 
-        user_account.balance -= amount_to_withdrawal
+        user_account.balance -= Decimal(amount_to_withdrawal)
         db.session.commit()
 
-        return new_transaction
+        return {'balance': user_account.balance}
 
     @app.patch('/account/<int:account_id>')
     @app.input(LockIn)
@@ -262,6 +268,13 @@ def create_app():
         user_account = Account.query.filter_by(id=account_id).first()
         user_account.is_active = data.get('is_active')
         db.session.commit()
+
+        return user_account
+
+    @app.get('/account/<int:account_id>')
+    @app.output(AccountOut, status_code=200)
+    def get_account(account_id):
+        user_account = Account.query.filter_by(id=account_id).first()
 
         return user_account
 
