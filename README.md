@@ -1,4 +1,4 @@
-# desafio-blox
+# desafio-bloxs
 Desafio do processo seletivo de Full Stack Developer
 
 ## setup
@@ -8,7 +8,7 @@ Para rodar o projeto, basta seguir os comandos descritos abaixo na ordem em que 
 ### Baixando o projeto e fazendo setup da API
 ```bash
 git clone https://github.com/vinimlo/desafio-blox.git
-cd desafio-blox/api-bank
+cd desafio-bloxs/api-bank
 cp .env.example .env
 make init
 make install
@@ -17,13 +17,13 @@ make install
 ### Primeira execução do banco
 Entraremos na pasta do projeto e subiremos o banco
 ```bash
-cd desafio-blox
+cd desafio-bloxs
 docker-compose up
 ```
 
 Em um novo terminal, vamos criar as tabelas e fazer um seed com 5 usuários. Depois, vamos executar a aplicação back-end.
 ```bash
-cd desafio-blox/api-bank
+cd desafio-bloxs/api-bank
 make init
 python create_db.py
 flask seed-db
