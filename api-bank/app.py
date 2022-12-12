@@ -217,6 +217,9 @@ def create_app():
 
         amount_to_deposit = abs(data.get('amount'))
 
+        if(amount_to_deposit == 0):
+            abort(403, 'Invalid amount')
+
         new_transaction = Transaction()
         new_transaction.amount = amount_to_deposit
         new_transaction.account_id = data.get('account_id')
@@ -251,6 +254,9 @@ def create_app():
 
         if user_account.balance - amount_to_withdrawal < 0:
             abort(403, 'Not enough funds1!')
+
+        if(amount_to_withdrawal == 0):
+            abort(403, 'Invalid amount')
 
         new_transaction = Transaction()
         new_transaction.amount = -amount_to_withdrawal
