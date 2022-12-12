@@ -1,14 +1,25 @@
 from apiflask import (APIFlask, Schema, fields, validators,
                       PaginationSchema, pagination_builder, abort, HTTPError)
-from services import db
+from flask_cors import CORS
 from models import Person, Account, Transaction
 from flask_migrate import Migrate, upgrade, downgrade
 from datetime import datetime
+from services import db
 
 
 class CPFAlreadyExists(HTTPError):
     status_code = 403
     message = 'CPF already exists.'
+
+
+class PersonNotFound(HTTPError):
+    status_code = 200
+    message = 'Person does not exist.'
+
+
+class AccountNotFound(HTTPError):
+    status_code = 200
+    message = 'Account does not exist.'
 
 
 class TransactionQuery(Schema):
@@ -24,15 +35,17 @@ class TransactionIn(Schema):
 
 
 class AccountIn(Schema):
-    name = fields.String()
-    cpf = fields.String()
-    birthdate = fields.DateTime()
+    person_id = fields.Integer()
     account_type = fields.Integer()
 
 
 class LockIn(Schema):
     is_active = fields.Boolean()
 
+class PersonIn(Schema):
+    name = fields.String()
+    cpf = fields.String()
+    birthdate = fields.DateTime()
 
 class PersonOut(Schema):
     id = fields.Integer()
@@ -104,6 +117,7 @@ def create_app():
     )
 
     migrate = Migrate(app, db)
+    cors = CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}})
 
     with app.app_context():
         db.init_app(app)
@@ -122,10 +136,10 @@ def create_app():
             db.session.flush()
         db.session.commit()
 
-    @app.post('/account')
-    @app.input(AccountIn)
-    @app.output(AccountOut, status_code=201)
-    def create_account(data):
+    @app.post('/person')
+    @app.input(PersonIn)
+    @app.output(PersonOut, status_code=201)
+    def create_person(data):
         cpf_already_exists = check_cpf_exists(data.get('cpf'))
 
         if cpf_already_exists:
@@ -138,21 +152,52 @@ def create_app():
         db.session.add(new_person)
         db.session.commit()
 
+        return new_person
+
+    @app.post('/account')
+    @app.input(AccountIn)
+    @app.output(AccountOut, status_code=201)
+    def create_account(data):
+
         new_account = Account()
         new_account.balance = 0.0
         new_account.daily_withdrawal_limit = 1000.0
         new_account.is_active = True
         new_account.account_type = data.get('account_type')
         new_account.date_created = datetime.now()
-        new_account.person_id = new_person.id
+        new_account.person_id = data.get('person_id')
         db.session.add(new_account)
 
         db.session.commit()
 
         return new_account
 
+    @app.get('/get_account/<int:person_cpf>')
+    @app.output(AccountOut, status_code=200)
+    def get_account(person_cpf: int):
+        person = Person.query.filter_by(cpf=person_cpf).first()
+        if not person:
+            raise PersonNotFound
+
+        account = Account.query.filter_by(person_id=person.id).first()
+
+        if not account:
+            raise AccountNotFound
+
+        return account
+
+    @app.get('/person/<int:person_cpf>')
+    @app.output(PersonOut, status_code=200)
+    def get_person(person_cpf: int):
+        person = Person.query.filter_by(cpf=person_cpf).first()
+
+        if not person:
+            raise PersonNotFound
+
+        return person
+
     @app.get('/balance/<int:account_id>')
-    @app.output(AccountOut(partial=True))
+    @app.output(AccountOut(partial=True), status_code=200)
     def get_balance(account_id):
         account = Account.query.filter_by(id=account_id).first()
 
@@ -212,7 +257,7 @@ def create_app():
 
     @app.patch('/account/<int:account_id>')
     @app.input(LockIn)
-    @app.output(AccountOut)
+    @app.output(AccountOut, status_code=200)
     def lock_account(account_id, data):
         user_account = Account.query.filter_by(id=account_id).first()
         user_account.is_active = data.get('is_active')
@@ -223,7 +268,7 @@ def create_app():
     @app.get('/transactions')
     @app.get('/transactions/<int:account_id>')
     @app.input(TransactionQuery, location='query')
-    @app.output(TransactionsOut, status_code=201)
+    @app.output(TransactionsOut, status_code=200)
     def get_transactions(account_id, query):
         pagination = Transaction.query.filter_by(account_id=account_id) \
             .paginate(

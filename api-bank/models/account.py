@@ -10,7 +10,7 @@ class Account(db.Model):
     account_type = db.Column(db.Integer, nullable=False)
     date_created = db.Column(db.DateTime, nullable=False)
 
-    person_id = db.Column(db.Integer, db.ForeignKey("person.id"))
+    person_id = db.Column(db.Integer, db.ForeignKey("person.id"), unique=True)
     person_relation = db.relationship(
         "Person", backref="Account", foreign_keys=person_id, uselist=False
     )
