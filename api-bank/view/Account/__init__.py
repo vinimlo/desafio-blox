@@ -5,6 +5,7 @@ from models.Person import Person
 from datetime import datetime
 from lib.errors import PersonNotFound, AccountNotFound
 from services import db
+from sqlalchemy import exists
 
 account_bp = APIBlueprint('account', __name__)
 
@@ -31,12 +32,14 @@ def create_account(data):
 @account_bp.get('/search_account/<int:person_cpf>')
 @account_bp.output(AccountOut, status_code=200)
 def search_account(person_cpf: int):
-  person = Person.query.filter_by(cpf=person_cpf).first()
+  person = db.session.query(exists().where(Person.cpf == person_cpf)).scalar()
 
   if not person:
     raise PersonNotFound
 
-  account = Account.query.filter_by(person_id=person.id).first()
+  account = (db.session.query(Account)
+                       .join(Person, Person.id == Account.person_id)
+                       .filter(Person.cpf == person_cpf).first())
 
   if not account:
     raise AccountNotFound

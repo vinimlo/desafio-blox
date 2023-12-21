@@ -10,29 +10,29 @@ transaction_bp = APIBlueprint('transaction', __name__)
 
 
 @transaction_bp.post('/deposit')
-@transaction_bp.input(TransactionIn)
+@transaction_bp.input(TransactionIn, location='json')
 @transaction_bp.output(AccountOut(partial=True), status_code=201)
-def create_deposit(data):
+def create_deposit(json_data):
   user_account = Account.query.filter_by(
-    id=data.get('account_id')).first()
+    id=json_data.get('account_id')).first()
 
   if not user_account.is_active:
     abort(403, 'Account locked.')
 
-  amount_to_deposit = abs(data.get('amount'))
+  amount_to_deposit = abs(json_data.get('amount'))
 
   if(amount_to_deposit == 0):
     abort(403, 'Invalid amount')
 
   new_transaction = Transaction()
   new_transaction.amount = amount_to_deposit
-  new_transaction.account_id = data.get('account_id')
+  new_transaction.account_id = json_data.get('account_id')
   new_transaction.date_created = datetime.now()
   db.session.add(new_transaction)
   db.session.commit()
 
   user_account = Account.query.filter_by(
-                                         id=data.get('account_id')).first()
+                                         id=json_data.get('account_id')).first()
   user_account.balance += amount_to_deposit
 
   db.session.commit()
@@ -40,12 +40,14 @@ def create_deposit(data):
   return {'balance': user_account.balance}
 
 @transaction_bp.post('/withdrawal')
-@transaction_bp.input(TransactionIn)
+@transaction_bp.input(TransactionIn, location='json')
 @transaction_bp.output(AccountOut(partial=True), status_code=201)
-def create_withdrawal(data):
-  amount_to_withdrawal = round(abs(data.get('amount')), 2)
+def create_withdrawal(json_data):
+  account_id = json_data.get('account_id')
+
+  amount_to_withdrawal = round(abs(json_data.get('amount')), 2)
   user_account = Account.query.filter_by(
-    id=data.get('account_id')).first()
+    id=account_id).first()
 
   if not user_account.is_active:
     abort(403, 'Account locked.')
@@ -64,7 +66,7 @@ def create_withdrawal(data):
 
   new_transaction = Transaction()
   new_transaction.amount = -amount_to_withdrawal
-  new_transaction.account_id = data.get('account_id')
+  new_transaction.account_id = account_id
   new_transaction.date_created = datetime.now()
   db.session.add(new_transaction)
   db.session.commit()
@@ -78,11 +80,12 @@ def create_withdrawal(data):
 @transaction_bp.get('/transactions/<int:account_id>')
 @transaction_bp.input(TransactionQuery, location='query')
 @transaction_bp.output(TransactionsOut, status_code=200)
-def get_transactions(account_id, query):
+def get_transactions(account_id, query_data):
+
     pagination = Transaction.query.filter_by(account_id=account_id) \
         .paginate(
-            page=query.get('page'),
-            per_page=query.get('per_page')
+            page=query_data.get('page'),
+            per_page=query_data.get('per_page')
     )
     transactions = pagination.items
 
