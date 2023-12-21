@@ -12,27 +12,27 @@ person_bp = APIBlueprint('person', __name__)
 @person_bp.input(PersonIn, location='json')
 @person_bp.output(PersonOut, status_code=201)
 def create_person(json_data):
-  cpf_already_exists = check_cpf_exists(json_data.get('cpf'))
+    cpf_already_exists = check_cpf_exists(json_data.get('cpf'))
 
-  if cpf_already_exists:
-      raise CPFAlreadyExists
+    if cpf_already_exists:
+        raise CPFAlreadyExists
 
-  new_person = Person()
-  new_person.name = json_data.get('name')
-  new_person.cpf = json_data.get('cpf')
-  new_person.birthdate = json_data.get('birthdate')
-  db.session.add(new_person)
-  db.session.commit()
+    new_person = Person()
+    new_person.name = json_data.get('name')
+    new_person.cpf = json_data.get('cpf')
+    new_person.birthdate = json_data.get('birthdate')
+    db.session.add(new_person)
+    db.session.commit()
 
-  return new_person
+    return new_person
 
 
 @person_bp.get('/person/<int:person_cpf>')
 @person_bp.output(PersonOut, status_code=200)
 def get_person(person_cpf: int):
-  person = Person.query.filter_by(cpf=person_cpf).first()
+    person = Person.query.filter_by(cpf=person_cpf).first()
 
-  if not person:
-      raise PersonNotFound
+    if not person:
+        raise PersonNotFound
 
-  return person
+    return person
