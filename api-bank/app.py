@@ -4,9 +4,9 @@ from models.Person import Person
 from flask_migrate import Migrate
 from datetime import datetime
 from services import db
-from view.account import account_bp
-from view.person import person_bp
-from view.transaction import transaction_bp
+from view.Account import account_bp
+from view.Person import person_bp
+from view.Transaction import transaction_bp
 
 def create_app():
     app = APIFlask(__name__, title='Desafio Bloxs')
